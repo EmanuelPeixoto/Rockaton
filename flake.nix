@@ -11,9 +11,12 @@
       {
       devShells.${system}.default = pkgs.mkShell {
         buildInputs = [
+          pkgs.air
           pkgs.git
           pkgs.go
           pkgs.lazygit
+          pkgs.swagger-cli
+          pkgs.sqlite
         ];
 
         shellHook = ''
