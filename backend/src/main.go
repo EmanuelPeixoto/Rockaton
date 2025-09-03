@@ -161,18 +161,21 @@ func main() {
 
 			stmt, err := db.Prepare("INSERT INTO projetos (coordenador, projeto, programa, instituicao, tipo) VALUES (?, ?, ?, ?, ?)")
 			if err != nil {
-				log.Fatal(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao preparar comando SQL"})
+				return
 			}
 			defer stmt.Close()
 
 			res, err := stmt.Exec(p.Coordenador, p.Projeto, p.Programa, p.Instituicao, p.Tipo)
 			if err != nil {
-				log.Fatal(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao inserir projeto"})
+				return
 			}
 
 			id, err := res.LastInsertId()
 			if err != nil {
-				log.Fatal(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao recuperar ID do projeto"})
+				return
 			}
 			p.ID = int(id)
 
@@ -188,17 +191,43 @@ func main() {
 				return
 			}
 
+			// Verifica se o projeto existe
+			var existingInstituicao string
+			err := db.QueryRow("SELECT instituicao FROM projetos WHERE id = ?", id).Scan(&existingInstituicao)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não encontrado"})
+					return
+				}
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar projeto"})
+				return
+			}
+
+			// Verifica se a instituição bate
+			if existingInstituicao != inst {
+				c.JSON(http.StatusForbidden, gin.H{"error": "Você não pode atualizar projeto de outra instituição"})
+				return
+			}
+
 			p.Instituicao = inst
 
 			stmt, err := db.Prepare("UPDATE projetos SET coordenador = ?, projeto = ?, programa = ?, instituicao = ?, tipo = ? WHERE id = ?")
 			if err != nil {
-				log.Fatal(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao preparar comando SQL"})
+				return
 			}
 			defer stmt.Close()
 
-			_, err = stmt.Exec(p.Coordenador, p.Projeto, p.Programa, p.Instituicao, p.Tipo, id)
+			res, err := stmt.Exec(p.Coordenador, p.Projeto, p.Programa, p.Instituicao, p.Tipo, id)
 			if err != nil {
-				log.Fatal(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao atualizar projeto"})
+				return
+			}
+
+			rowsAffected, _ := res.RowsAffected()
+			if rowsAffected == 0 {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não atualizado"})
+				return
 			}
 
 			c.JSON(http.StatusOK, p)
@@ -208,15 +237,41 @@ func main() {
 			inst := strings.ToUpper(c.Param("instituicao"))
 			id := c.Param("id")
 
+			// Verifica se o projeto existe
+			var existingInstituicao string
+			err := db.QueryRow("SELECT instituicao FROM projetos WHERE id = ?", id).Scan(&existingInstituicao)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não encontrado"})
+					return
+				}
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar projeto"})
+				return
+			}
+
+			// Verifica se a instituição bate
+			if existingInstituicao != inst {
+				c.JSON(http.StatusForbidden, gin.H{"error": "Você não pode deletar projeto de outra instituição"})
+				return
+			}
+
 			stmt, err := db.Prepare("DELETE FROM projetos WHERE id = ? AND instituicao = ?")
 			if err != nil {
-				log.Fatal(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao preparar comando SQL"})
+				return
 			}
 			defer stmt.Close()
 
-			_, err = stmt.Exec(id, inst)
+			res, err := stmt.Exec(id, inst)
 			if err != nil {
-				log.Fatal(err)
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao deletar projeto"})
+				return
+			}
+
+			rowsAffected, _ := res.RowsAffected()
+			if rowsAffected == 0 {
+				c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não deletado"})
+				return
 			}
 
 			c.JSON(http.StatusOK, gin.H{"message": "Projeto deletado com sucesso"})
