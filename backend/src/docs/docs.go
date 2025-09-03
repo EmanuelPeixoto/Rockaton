@@ -150,48 +150,50 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/projetos": {
+        "/admin/{instituicao}/projetos": {
             "post": {
-                "description": "Cria um novo projeto no banco de dados. É necessário enviar um objeto JSON com os dados do projeto no corpo da requisição. O ID do projeto será gerado automaticamente.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Cria um novo projeto",
+                "description": "Cria um novo projeto para a instituição especificada. O parâmetro 'instituicao' define a instituição (ex: CCT, CCH, CBB, CCTA).",
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "summary": "Cria um projeto para a instituição",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sigla da Instituição",
+                        "name": "instituicao",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "description": "Objeto do Projeto",
                         "name": "projeto",
                         "in": "body",
                         "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.ProjetoPed"
-                        }
+                        "schema": { "$ref": "#/definitions/main.ProjetoPed" }
                     }
                 ],
                 "responses": {
                     "201": {
-                        "description": "O projeto recém-criado.",
-                        "schema": {
-                            "$ref": "#/definitions/main.ProjetoResp"
-                        }
+                        "description": "Projeto criado.",
+                        "schema": { "$ref": "#/definitions/main.ProjetoResp" }
                     }
                 }
             }
         },
-        "/admin/projetos/{id}": {
+        "/admin/{instituicao}/projetos/{id}": {
             "put": {
-                "description": "Atualiza um projeto existente no banco de dados pelo seu ID. É necessário enviar um objeto JSON com os dados atualizados do projeto no corpo da requisição.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Atualiza um projeto existente",
+                "description": "Atualiza um projeto existente para a instituição especificada.",
+                "consumes": ["application/json"],
+                "produces": ["application/json"],
+                "summary": "Atualiza projeto da instituição",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sigla da Instituição",
+                        "name": "instituicao",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "type": "integer",
                         "description": "ID do Projeto",
@@ -204,27 +206,28 @@ const docTemplate = `{
                         "name": "projeto",
                         "in": "body",
                         "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.ProjetoPed"
-                        }
+                        "schema": { "$ref": "#/definitions/main.ProjetoPed" }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "O projeto atualizado.",
-                        "schema": {
-                            "$ref": "#/definitions/main.ProjetoResp"
-                        }
+                        "description": "Projeto atualizado.",
+                        "schema": { "$ref": "#/definitions/main.ProjetoResp" }
                     }
                 }
             },
             "delete": {
-                "description": "Deleta um projeto do banco de dados pelo seu ID. Esta operação é irreversível.",
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Deleta um projeto",
+                "description": "Deleta um projeto da instituição especificada. A operação é irreversível.",
+                "produces": ["application/json"],
+                "summary": "Deleta projeto da instituição",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Sigla da Instituição",
+                        "name": "instituicao",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "type": "integer",
                         "description": "ID do Projeto",
@@ -236,9 +239,7 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "Mensagem de sucesso.",
-                        "schema": {
-                            "$ref": "#/definitions/gin.H"
-                        }
+                        "schema": { "$ref": "#/definitions/gin.H" }
                     }
                 }
             }
@@ -270,9 +271,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "programa": {
-                    "type": "string"
-                },
-                "instituicao": {
                     "type": "string"
                 },
                 "tipo": {
@@ -308,16 +306,16 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
-	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
-	InfoInstanceName: "swagger",
-	SwaggerTemplate:  docTemplate,
+  Version:          "",
+  Host:             "",
+  BasePath:         "",
+  Schemes:          []string{},
+  Title:            "",
+  Description:      "",
+  InfoInstanceName: "swagger",
+  SwaggerTemplate:  docTemplate,
 }
 
 func init() {
-	swag.Register(SwaggerInfo.InstanceName(), SwaggerInfo)
+  swag.Register(SwaggerInfo.InstanceName(), SwaggerInfo)
 }

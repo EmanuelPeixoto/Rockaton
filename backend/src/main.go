@@ -148,12 +148,16 @@ func main() {
 
 	admin := router.Group("/admin")
 	{
-		admin.POST("/projetos", func(c *gin.Context) {
+		admin.POST("/:instituicao/projetos", func(c *gin.Context) {
+			inst := strings.ToUpper(c.Param("instituicao"))
 			var p Projeto
 			if err := c.ShouldBindJSON(&p); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return
 			}
+
+			// força instituição da rota
+			p.Instituicao = inst
 
 			stmt, err := db.Prepare("INSERT INTO projetos (coordenador, projeto, programa, instituicao, tipo) VALUES (?, ?, ?, ?, ?)")
 			if err != nil {
@@ -170,20 +174,21 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-
 			p.ID = int(id)
 
 			c.JSON(http.StatusCreated, p)
 		})
 
-		admin.PUT("/projetos/:id", func(c *gin.Context) {
+		admin.PUT("/:instituicao/projetos/:id", func(c *gin.Context) {
+			inst := strings.ToUpper(c.Param("instituicao"))
 			id := c.Param("id")
-
 			var p Projeto
 			if err := c.ShouldBindJSON(&p); err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 				return
 			}
+
+			p.Instituicao = inst
 
 			stmt, err := db.Prepare("UPDATE projetos SET coordenador = ?, projeto = ?, programa = ?, instituicao = ?, tipo = ? WHERE id = ?")
 			if err != nil {
@@ -199,16 +204,17 @@ func main() {
 			c.JSON(http.StatusOK, p)
 		})
 
-		admin.DELETE("/projetos/:id", func(c *gin.Context) {
+		admin.DELETE("/:instituicao/projetos/:id", func(c *gin.Context) {
+			inst := strings.ToUpper(c.Param("instituicao"))
 			id := c.Param("id")
 
-			stmt, err := db.Prepare("DELETE FROM projetos WHERE id = ?")
+			stmt, err := db.Prepare("DELETE FROM projetos WHERE id = ? AND instituicao = ?")
 			if err != nil {
 				log.Fatal(err)
 			}
 			defer stmt.Close()
 
-			_, err = stmt.Exec(id)
+			_, err = stmt.Exec(id, inst)
 			if err != nil {
 				log.Fatal(err)
 			}
