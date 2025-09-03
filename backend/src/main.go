@@ -8,6 +8,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"rockaton/docs"
 )
 
 type Projeto struct {
@@ -32,6 +35,15 @@ func main() {
 	defer db.Close()
 
 	router := gin.Default()
+
+	docs.SwaggerInfo.Title = "Rockaton API"
+	docs.SwaggerInfo.Description = "This is the API for the Rockaton project."
+	docs.SwaggerInfo.Version = "1.0"
+	docs.SwaggerInfo.Host = "localhost:8080"
+	docs.SwaggerInfo.BasePath = "/"
+	docs.SwaggerInfo.Schemes = []string{"http"}
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	router.GET("/projetos", func(c *gin.Context) {
 		rows, err := db.Query("SELECT id, coordenador, projeto, programa, instituicao, tipo FROM projetos")
