@@ -645,7 +645,7 @@ func main() {
 	}
 	defer db.Close()
 
-	router := gin.New()
+	router := gin.Default()
 	router.Use(CORSMiddleware())
 
 	// Middleware para injetar o DB no contexto
