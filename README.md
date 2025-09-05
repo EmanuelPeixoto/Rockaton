@@ -46,4 +46,4 @@ O servidor frontend estará disponível no endereço fornecido pelo processo.
 
 ### Endpoints
 
-- `http://localhost:8080/swagger`: Documentação dos endpoints
+- `http://localhost:8080/swagger/index.html`: Documentação dos endpoints
