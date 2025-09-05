@@ -182,6 +182,309 @@ func DeletarInteresse(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func GetProjetos(c *gin.Context) {
+	// Obtém a conexão com o banco de dados do contexto
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conexão com o banco de dados não encontrada"})
+		return
+	}
+	sqlDB := db.(*sql.DB)
+
+	rows, err := sqlDB.Query("SELECT id, coordenador, projeto, programa, instituicao, tipo FROM projetos")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar projetos"})
+		return
+	}
+	defer rows.Close()
+
+	projetos := []Projeto{}
+	for rows.Next() {
+		var p Projeto
+		err := rows.Scan(&p.ID, &p.Coordenador, &p.Projeto, &p.Programa, &p.Instituicao, &p.Tipo)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao escanear projeto"})
+			return
+		}
+		projetos = append(projetos, p)
+	}
+
+	c.JSON(http.StatusOK, projetos)
+}
+
+func GetProjetoByID(c *gin.Context) {
+	// Obtém a conexão com o banco de dados do contexto
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conexão com o banco de dados não encontrada"})
+		return
+	}
+	sqlDB := db.(*sql.DB)
+
+	id := c.Param("id")
+
+	var p Projeto
+	err := sqlDB.QueryRow("SELECT id, coordenador, projeto, programa, instituicao, tipo FROM projetos WHERE id = ?", id).Scan(&p.ID, &p.Coordenador, &p.Projeto, &p.Programa, &p.Instituicao, &p.Tipo)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"message": "Projeto not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar projeto por ID"})
+		return
+	}
+
+	c.JSON(http.StatusOK, p)
+}
+
+func GetInstituicoes(c *gin.Context) {
+	// Obtém a conexão com o banco de dados do contexto
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conexão com o banco de dados não encontrada"})
+		return
+	}
+	sqlDB := db.(*sql.DB)
+
+	rows, err := sqlDB.Query("SELECT nome, link FROM instituicoes")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar instituições"})
+		return
+	}
+	defer rows.Close()
+
+	instituicoes := []Instituicao{}
+	for rows.Next() {
+		var i Instituicao
+		err := rows.Scan(&i.Nome, &i.Link)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao escanear instituição"})
+			return
+		}
+		instituicoes = append(instituicoes, i)
+	}
+
+	c.JSON(http.StatusOK, instituicoes)
+}
+
+func GetProjetosByInstituicao(c *gin.Context) {
+	// Obtém a conexão com o banco de dados do contexto
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conexão com o banco de dados não encontrada"})
+		return
+	}
+	sqlDB := db.(*sql.DB)
+
+	instituicao := strings.ToUpper(c.Param("instituicao"))
+
+	rows, err := sqlDB.Query("SELECT id, coordenador, projeto, programa, instituicao, tipo FROM projetos WHERE instituicao = ?", instituicao)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar projetos por instituição"})
+		return
+	}
+	defer rows.Close()
+
+	projetos := []Projeto{}
+	for rows.Next() {
+		var p Projeto
+		err := rows.Scan(&p.ID, &p.Coordenador, &p.Projeto, &p.Programa, &p.Instituicao, &p.Tipo)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao escanear projeto por instituição"})
+			return
+		}
+		projetos = append(projetos, p)
+	}
+
+	c.JSON(http.StatusOK, projetos)
+}
+
+func GetProjetosByInstituicaoAndTipo(c *gin.Context) {
+	// Obtém a conexão com o banco de dados do contexto
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conexão com o banco de dados não encontrada"})
+		return
+	}
+	sqlDB := db.(*sql.DB)
+
+	instituicao := strings.ToUpper(c.Param("instituicao"))
+	tipo := strings.ToUpper(c.Param("tipo"))
+
+	rows, err := sqlDB.Query("SELECT id, coordenador, projeto, programa, instituicao, tipo FROM projetos WHERE instituicao = ? AND tipo = ?", instituicao, tipo)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar projetos por instituição e tipo"})
+		return
+	}
+	defer rows.Close()
+
+	projetos := []Projeto{}
+	for rows.Next() {
+		var p Projeto
+		err := rows.Scan(&p.ID, &p.Coordenador, &p.Projeto, &p.Programa, &p.Instituicao, &p.Tipo)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao escanear projeto por instituição e tipo"})
+			return
+		}
+		projetos = append(projetos, p)
+	}
+
+	c.JSON(http.StatusOK, projetos)
+}
+
+func AdminCreateProjeto(c *gin.Context) {
+	// Obtém a conexão com o banco de dados do contexto
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conexão com o banco de dados não encontrada"})
+		return
+	}
+	sqlDB := db.(*sql.DB)
+
+	inst := strings.ToUpper(c.Param("instituicao"))
+	var p Projeto
+	if err := c.ShouldBindJSON(&p); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// força instituição da rota
+	p.Instituicao = inst
+
+	stmt, err := sqlDB.Prepare("INSERT INTO projetos (coordenador, projeto, programa, instituicao, tipo) VALUES (?, ?, ?, ?, ?)")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao preparar comando SQL para criar projeto"})
+		return
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Exec(p.Coordenador, p.Projeto, p.Programa, p.Instituicao, p.Tipo)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao inserir projeto"})
+		return
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao recuperar ID do projeto"})
+		return
+	}
+	p.ID = int(id)
+
+	c.JSON(http.StatusCreated, p)
+}
+
+func AdminUpdateProjeto(c *gin.Context) {
+	// Obtém a conexão com o banco de dados do contexto
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conexão com o banco de dados não encontrada"})
+		return
+	}
+	sqlDB := db.(*sql.DB)
+
+	inst := strings.ToUpper(c.Param("instituicao"))
+	id := c.Param("id")
+	var p Projeto
+	if err := c.ShouldBindJSON(&p); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Verifica se o projeto existe
+	var existingInstituicao string
+	err := sqlDB.QueryRow("SELECT instituicao FROM projetos WHERE id = ?", id).Scan(&existingInstituicao)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não encontrado"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar projeto"})
+		return
+	}
+
+	// Verifica se a instituição bate
+	if existingInstituicao != inst {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Você não pode atualizar projeto de outra instituição"})
+		return
+	}
+
+	p.Instituicao = inst
+
+	stmt, err := sqlDB.Prepare("UPDATE projetos SET coordenador = ?, projeto = ?, programa = ?, instituicao = ?, tipo = ? WHERE id = ?")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao preparar comando SQL para atualizar projeto"})
+		return
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Exec(p.Coordenador, p.Projeto, p.Programa, p.Instituicao, p.Tipo, id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao atualizar projeto"})
+		return
+	}
+
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não atualizado"})
+		return
+	}
+
+	c.JSON(http.StatusOK, p)
+}
+
+func AdminDeleteProjeto(c *gin.Context) {
+	// Obtém a conexão com o banco de dados do contexto
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conexão com o banco de dados não encontrada"})
+		return
+	}
+	sqlDB := db.(*sql.DB)
+
+	inst := strings.ToUpper(c.Param("instituicao"))
+	id := c.Param("id")
+
+	// Verifica se o projeto existe
+	var existingInstituicao string
+	err := sqlDB.QueryRow("SELECT instituicao FROM projetos WHERE id = ?", id).Scan(&existingInstituicao)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não encontrado"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar projeto"})
+		return
+	}
+
+	// Verifica se a instituição bate
+	if existingInstituicao != inst {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Você não pode deletar projeto de outra instituição"})
+		return
+	}
+
+	stmt, err := sqlDB.Prepare("DELETE FROM projetos WHERE id = ? AND instituicao = ?")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao preparar comando SQL para deletar projeto"})
+		return
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Exec(id, inst)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao deletar projeto"})
+		return
+	}
+
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não deletado"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Projeto deletado com sucesso"})
+}
+
 func main() {
 	db, err := sql.Open("sqlite3", "./rockaton.db")
 	if err != nil {
@@ -191,6 +494,7 @@ func main() {
 
 	router := gin.Default()
 
+	// Middleware para injetar o DB no contexto
 	router.Use(func(c *gin.Context) {
 		c.Set("db", db)
 		c.Next()
@@ -205,234 +509,24 @@ func main() {
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	router.GET("/projetos", func(c *gin.Context) {
-		rows, err := db.Query("SELECT id, coordenador, projeto, programa, instituicao, tipo FROM projetos")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer rows.Close()
+	// Rotas públicas para projetos e instituições
+	router.GET("/projetos", GetProjetos)
+	router.GET("/projeto/:id", GetProjetoByID)
+	router.GET("/instituicoes", GetInstituicoes)
+	router.GET("/projetos/:instituicao", GetProjetosByInstituicao)
+	router.GET("/projetos/:instituicao/:tipo", GetProjetosByInstituicaoAndTipo)
 
-		projetos := []Projeto{}
-		for rows.Next() {
-			var p Projeto
-			err := rows.Scan(&p.ID, &p.Coordenador, &p.Projeto, &p.Programa, &p.Instituicao, &p.Tipo)
-			if err != nil {
-				log.Fatal(err)
-			}
-			projetos = append(projetos, p)
-		}
-
-		c.JSON(http.StatusOK, projetos)
-	})
-
-	router.GET("/projeto/:id", func(c *gin.Context) {
-		id := c.Param("id")
-
-		var p Projeto
-		err := db.QueryRow("SELECT id, coordenador, projeto, programa, instituicao, tipo FROM projetos WHERE id = ?", id).Scan(&p.ID, &p.Coordenador, &p.Projeto, &p.Programa, &p.Instituicao, &p.Tipo)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				c.JSON(http.StatusNotFound, gin.H{"message": "Projeto not found"})
-				return
-			}
-			log.Fatal(err)
-		}
-
-		c.JSON(http.StatusOK, p)
-	})
-
-	router.GET("/instituicoes", func(c *gin.Context) {
-		rows, err := db.Query("SELECT nome, link FROM instituicoes")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer rows.Close()
-
-		instituicoes := []Instituicao{}
-		for rows.Next() {
-			var i Instituicao
-			err := rows.Scan(&i.Nome, &i.Link)
-			if err != nil {
-				log.Fatal(err)
-			}
-			instituicoes = append(instituicoes, i)
-		}
-
-		c.JSON(http.StatusOK, instituicoes)
-	})
-
-	router.GET("/projetos/:instituicao", func(c *gin.Context) {
-		instituicao := strings.ToUpper(c.Param("instituicao"))
-
-		rows, err := db.Query("SELECT id, coordenador, projeto, programa, instituicao, tipo FROM projetos WHERE instituicao = ?", instituicao)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer rows.Close()
-
-		projetos := []Projeto{}
-		for rows.Next() {
-			var p Projeto
-			err := rows.Scan(&p.ID, &p.Coordenador, &p.Projeto, &p.Programa, &p.Instituicao, &p.Tipo)
-			if err != nil {
-				log.Fatal(err)
-			}
-			projetos = append(projetos, p)
-		}
-
-		c.JSON(http.StatusOK, projetos)
-	})
-
-	router.GET("/projetos/:instituicao/:tipo", func(c *gin.Context) {
-		instituicao := strings.ToUpper(c.Param("instituicao"))
-		tipo := strings.ToUpper(c.Param("tipo"))
-
-		rows, err := db.Query("SELECT id, coordenador, projeto, programa, instituicao, tipo FROM projetos WHERE instituicao = ? AND tipo = ?", instituicao, tipo)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer rows.Close()
-
-		projetos := []Projeto{}
-		for rows.Next() {
-			var p Projeto
-			err := rows.Scan(&p.ID, &p.Coordenador, &p.Projeto, &p.Programa, &p.Instituicao, &p.Tipo)
-			if err != nil {
-				log.Fatal(err)
-			}
-			projetos = append(projetos, p)
-		}
-
-		c.JSON(http.StatusOK, projetos)
-	})
-
+	// Rota para expressar interesse em um projeto
 	router.POST("/api/projetos/:id/interesses", CriarInteresse)
 
+	// Rotas administrativas (requerem autenticação/autorização, implícita pelo grupo /admin)
 	admin := router.Group("/admin")
 	{
-		admin.POST("/:instituicao/projetos", func(c *gin.Context) {
-			inst := strings.ToUpper(c.Param("instituicao"))
-			var p Projeto
-			if err := c.ShouldBindJSON(&p); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-				return
-			}
+		admin.POST("/:instituicao/projetos", AdminCreateProjeto)
+		admin.PUT("/:instituicao/projetos/:id", AdminUpdateProjeto)
+		admin.DELETE("/:instituicao/projetos/:id", AdminDeleteProjeto)
 
-			p.Instituicao = inst
-
-			stmt, err := db.Prepare("INSERT INTO projetos (coordenador, projeto, programa, instituicao, tipo) VALUES (?, ?, ?, ?, ?)")
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao preparar comando SQL"})
-				return
-			}
-			defer stmt.Close()
-
-			res, err := stmt.Exec(p.Coordenador, p.Projeto, p.Programa, p.Instituicao, p.Tipo)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao inserir projeto"})
-				return
-			}
-
-			id, err := res.LastInsertId()
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao recuperar ID do projeto"})
-				return
-			}
-			p.ID = int(id)
-
-			c.JSON(http.StatusCreated, p)
-		})
-
-		admin.PUT("/:instituicao/projetos/:id", func(c *gin.Context) {
-			inst := strings.ToUpper(c.Param("instituicao"))
-			id := c.Param("id")
-			var p Projeto
-			if err := c.ShouldBindJSON(&p); err != nil {
-				c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-				return
-			}
-
-			var existingInstituicao string
-			err := db.QueryRow("SELECT instituicao FROM projetos WHERE id = ?", id).Scan(&existingInstituicao)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não encontrado"})
-					return
-				}
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar projeto"})
-				return
-			}
-
-			if existingInstituicao != inst {
-				c.JSON(http.StatusForbidden, gin.H{"error": "Você não pode atualizar projeto de outra instituição"})
-				return
-			}
-
-			p.Instituicao = inst
-
-			stmt, err := db.Prepare("UPDATE projetos SET coordenador = ?, projeto = ?, programa = ?, instituicao = ?, tipo = ? WHERE id = ?")
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao preparar comando SQL"})
-				return
-			}
-			defer stmt.Close()
-
-			res, err := stmt.Exec(p.Coordenador, p.Projeto, p.Programa, p.Instituicao, p.Tipo, id)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao atualizar projeto"})
-				return
-			}
-
-			rowsAffected, _ := res.RowsAffected()
-			if rowsAffected == 0 {
-				c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não atualizado"})
-				return
-			}
-
-			c.JSON(http.StatusOK, p)
-		})
-
-		admin.DELETE("/:instituicao/projetos/:id", func(c *gin.Context) {
-			inst := strings.ToUpper(c.Param("instituicao"))
-			id := c.Param("id")
-
-			var existingInstituicao string
-			err := db.QueryRow("SELECT instituicao FROM projetos WHERE id = ?", id).Scan(&existingInstituicao)
-			if err != nil {
-				if err == sql.ErrNoRows {
-					c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não encontrado"})
-					return
-				}
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar projeto"})
-				return
-			}
-
-			if existingInstituicao != inst {
-				c.JSON(http.StatusForbidden, gin.H{"error": "Você não pode deletar projeto de outra instituição"})
-				return
-			}
-
-			stmt, err := db.Prepare("DELETE FROM projetos WHERE id = ? AND instituicao = ?")
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao preparar comando SQL"})
-				return
-			}
-			defer stmt.Close()
-
-			res, err := stmt.Exec(id, inst)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao deletar projeto"})
-				return
-			}
-
-			rowsAffected, _ := res.RowsAffected()
-			if rowsAffected == 0 {
-				c.JSON(http.StatusNotFound, gin.H{"error": "Projeto não deletado"})
-				return
-			}
-
-			c.JSON(http.StatusOK, gin.H{"message": "Projeto deletado com sucesso"})
-		})
+		// Rotas para gerenciar interesses
 		admin.GET("/:instituicao/interesses", ListarInteressesInstituicao)
 		admin.DELETE("/:instituicao/interesses/:id", DeletarInteresse)
 	}
