@@ -16,7 +16,6 @@
           pkgs.go
           pkgs.lazygit
           pkgs.go-swag
-          pkgs.swagger-cli
           pkgs.sqlite
 
           pkgs.nodejs_24

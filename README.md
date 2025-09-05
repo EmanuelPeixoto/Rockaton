@@ -8,36 +8,43 @@ Dupla com @BMSales
 
 Para executar o projeto, siga os passos abaixo:
 
-1. **Instale as dependências:**
+1. **Inicie o ambiente nix:**
 
    ```bash
-   go mod tidy
-   npm install @mui/material @emotion/react @emotion/styled
+   nix develop
    ```
 
-2. **Popule o banco de dados:**
+Caso não queira usar nix, instale as dependencias de dentro do flake.nix manualmente.
+
+2. **Instale as dependências:**
 
    ```bash
-   ./populate_db.sh
+   cd frontend && npm i
    ```
 
-3. **Execute o servidor backend:**
+3. **Popule o banco de dados:**
 
    ```bash
-   air
+   cd backend/src && ./populate_db.sh
    ```
 
-4. **Execute o servidor frontend:**
+4. **Execute o servidor backend:**
 
    ```bash
-   npm run dev
+   cd backend/src && air
+   ```
+
+5. **Execute o servidor frontend:**
+
+   ```bash
+   cd frontend && npm run dev
    ```
 
 O servidor backend estará disponível em `http://localhost:8080`.
+O servidor frontend estará disponível em `http://localhost:5173`.
 
 O servidor frontend estará disponível no endereço fornecido pelo processo.
 
 ### Endpoints
 
-- `GET /projetos`: Retorna todos os projetos.
-- `GET /projetos/:id`: Retorna um projeto específico.
+- `http://localhost:8080/swagger`: Documentação dos endpoints
