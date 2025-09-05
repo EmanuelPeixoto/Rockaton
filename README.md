@@ -41,7 +41,6 @@ Caso não queira usar nix, instale as dependencias de dentro do flake.nix manual
    ```
 
 O servidor backend estará disponível em `http://localhost:8080`.
-O servidor frontend estará disponível em `http://localhost:5173`.
 
 O servidor frontend estará disponível no endereço fornecido pelo processo.
 
