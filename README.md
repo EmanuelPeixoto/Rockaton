@@ -11,6 +11,7 @@ Para executar o projeto, siga os passos abaixo:
 
    ```bash
    go mod tidy
+   npm install @mui/material @emotion/react @emotion/styled
    ```
 
 2. **Popule o banco de dados:**
@@ -19,13 +20,20 @@ Para executar o projeto, siga os passos abaixo:
    ./populate_db.sh
    ```
 
-3. **Execute o servidor:**
+3. **Execute o servidor backend:**
 
    ```bash
    air
    ```
 
-O servidor estará disponível em `http://localhost:8080`.
+4. **Execute o servidor frontend:**
+
+   ```bash
+   npm run dev
+   ```
+
+O servidor backend estará disponível em `http://localhost:8080`.
+O servidor frontend estará disponível no endereço fornecido pelo processo.
 
 ### Endpoints
 
