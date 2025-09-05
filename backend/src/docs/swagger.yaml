@@ -1,9 +1,420 @@
-basePath: /
-host: localhost:8080
+definitions:
+  main.HTTPError:
+    properties:
+      error:
+        example: Mensagem de erro
+        type: string
+    type: object
+  main.Instituicao:
+    properties:
+      link:
+        type: string
+      nome:
+        type: string
+    type: object
+  main.Interesse:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      nome:
+        type: string
+      projeto_id:
+        type: integer
+      telefone:
+        type: string
+    required:
+    - email
+    - nome
+    type: object
+  main.InteresseInput:
+    properties:
+      email:
+        type: string
+      nome:
+        type: string
+      telefone:
+        type: string
+    required:
+    - email
+    - nome
+    type: object
+  main.Projeto:
+    properties:
+      coordenador:
+        type: string
+      id:
+        type: integer
+      instituicao:
+        type: string
+      programa:
+        type: string
+      projeto:
+        type: string
+      tipo:
+        type: string
+    type: object
+  main.ProjetoInput:
+    properties:
+      coordenador:
+        type: string
+      instituicao:
+        type: string
+      programa:
+        type: string
+      projeto:
+        type: string
+      tipo:
+        type: string
+    required:
+    - coordenador
+    - instituicao
+    - projeto
+    - tipo
+    type: object
 info:
   contact: {}
-  description: This is the API for the Rockaton project.
-  title: Rockaton API
-  version: "1.0"
-paths: {}
+paths:
+  /admin/{instituicao}/interesses:
+    get:
+      description: Retorna uma lista de todos os interesses registrados para projetos
+        de uma instituição específica.
+      parameters:
+      - description: 'Nome da Instituição (ex: CBB)'
+        in: path
+        name: instituicao
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de interesses
+          schema:
+            items:
+              $ref: '#/definitions/main.Interesse'
+            type: array
+        "404":
+          description: Nenhum interesse encontrado para esta instituição
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Listar interesses por instituição
+      tags:
+      - Interesses
+  /admin/{instituicao}/interesses/{id}:
+    delete:
+      description: Permite que um administrador delete um interesse específico, desde
+        que pertença à sua instituição.
+      parameters:
+      - description: 'Nome da Instituição (ex: CBB)'
+        in: path
+        name: instituicao
+        required: true
+        type: string
+      - description: ID do Interesse
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: Interesse deletado com sucesso
+        "403":
+          description: Você não tem permissão para deletar este interesse
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "404":
+          description: Interesse não encontrado
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Deletar um interesse
+      tags:
+      - Interesses
+  /admin/{instituicao}/projetos:
+    post:
+      consumes:
+      - application/json
+      description: Permite que um administrador crie um novo projeto para sua instituição.
+      parameters:
+      - description: 'Nome da Instituição (ex: CBB)'
+        in: path
+        name: instituicao
+        required: true
+        type: string
+      - description: Dados do Projeto
+        in: body
+        name: projeto
+        required: true
+        schema:
+          $ref: '#/definitions/main.ProjetoInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Projeto criado com sucesso
+          schema:
+            $ref: '#/definitions/main.Projeto'
+        "400":
+          description: Requisição inválida
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Cria um novo projeto (Admin)
+      tags:
+      - Admin - Projetos
+  /admin/{instituicao}/projetos/{id}:
+    delete:
+      description: Permite que um administrador delete um projeto de sua instituição.
+      parameters:
+      - description: 'Nome da Instituição (ex: CBB)'
+        in: path
+        name: instituicao
+        required: true
+        type: string
+      - description: ID do Projeto
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: Projeto deletado com sucesso
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "403":
+          description: Você não pode deletar projeto de outra instituição
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "404":
+          description: Projeto não encontrado
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Deleta um projeto (Admin)
+      tags:
+      - Admin - Projetos
+    put:
+      consumes:
+      - application/json
+      description: Permite que um administrador atualize os detalhes de um projeto
+        existente em sua instituição.
+      parameters:
+      - description: 'Nome da Instituição (ex: CBB)'
+        in: path
+        name: instituicao
+        required: true
+        type: string
+      - description: ID do Projeto
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados do Projeto
+        in: body
+        name: projeto
+        required: true
+        schema:
+          $ref: '#/definitions/main.ProjetoInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Projeto atualizado com sucesso
+          schema:
+            $ref: '#/definitions/main.Projeto'
+        "400":
+          description: Requisição inválida
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "403":
+          description: Você não pode atualizar projeto de outra instituição
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "404":
+          description: Projeto não encontrado
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Atualiza um projeto existente (Admin)
+      tags:
+      - Admin - Projetos
+  /instituicoes:
+    get:
+      description: Retorna uma lista de todas as instituições cadastradas.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de instituições
+          schema:
+            items:
+              $ref: '#/definitions/main.Instituicao'
+            type: array
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Lista todas as instituições
+      tags:
+      - Instituições
+  /projeto/{id}:
+    get:
+      description: Retorna os detalhes de um projeto específico com base no seu ID.
+      parameters:
+      - description: ID do Projeto
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Detalhes do projeto
+          schema:
+            $ref: '#/definitions/main.Projeto'
+        "404":
+          description: Projeto não encontrado
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Obtém um projeto pelo ID
+      tags:
+      - Projetos
+  /projetos:
+    get:
+      description: Retorna uma lista completa de todos os projetos cadastrados.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de projetos
+          schema:
+            items:
+              $ref: '#/definitions/main.Projeto'
+            type: array
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Lista todos os projetos
+      tags:
+      - Projetos
+  /projetos/{id}/interesses:
+    post:
+      consumes:
+      - application/json
+      description: Permite que um usuário expresse interesse em participar de um projeto,
+        fornecendo nome, email e telefone.
+      parameters:
+      - description: ID do Projeto
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Dados do interesse
+        in: body
+        name: interesse
+        required: true
+        schema:
+          $ref: '#/definitions/main.InteresseInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Interesse criado com sucesso
+          schema:
+            $ref: '#/definitions/main.Interesse'
+        "400":
+          description: Requisição inválida
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "404":
+          description: Projeto não encontrado
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Expressar interesse em um projeto
+      tags:
+      - Interesses
+  /projetos/{instituicao}:
+    get:
+      description: Retorna uma lista de projetos filtrados por uma instituição específica.
+      parameters:
+      - description: 'Nome da Instituição (ex: CBB)'
+        in: path
+        name: instituicao
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de projetos da instituição
+          schema:
+            items:
+              $ref: '#/definitions/main.Projeto'
+            type: array
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Lista projetos por instituição
+      tags:
+      - Projetos
+  /projetos/{instituicao}/{tipo}:
+    get:
+      description: Retorna uma lista de projetos filtrados por instituição e tipo
+        (INDIVIDUAL, INSTITUCIONAL, PROGRAMA).
+      parameters:
+      - description: 'Nome da Instituição (ex: CBB)'
+        in: path
+        name: instituicao
+        required: true
+        type: string
+      - description: 'Tipo do Projeto (ex: INDIVIDUAL)'
+        in: path
+        name: tipo
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de projetos por instituição e tipo
+          schema:
+            items:
+              $ref: '#/definitions/main.Projeto'
+            type: array
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/main.HTTPError'
+      summary: Lista projetos por instituição e tipo
+      tags:
+      - Projetos
 swagger: "2.0"

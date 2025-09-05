@@ -22,6 +22,14 @@ type Projeto struct {
 	Tipo        string  `json:"tipo"`
 }
 
+type ProjetoInput struct {
+	Coordenador string  `json:"coordenador" binding:"required"`
+	Projeto     string  `json:"projeto" binding:"required"`
+	Programa    *string `json:"programa"`
+	Instituicao string  `json:"instituicao" binding:"required"`
+	Tipo        string  `json:"tipo" binding:"required"`
+}
+
 type Instituicao struct {
 	Nome string `json:"nome"`
 	Link string `json:"link"`
@@ -35,6 +43,30 @@ type Interesse struct {
 	ProjetoID int    `json:"projeto_id"`
 }
 
+type InteresseInput struct {
+	Nome      string `json:"nome" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Telefone  string `json:"telefone"`
+}
+
+// HTTPError representa o formato de resposta de erro padrão
+type HTTPError struct {
+	Error string `json:"error" example:"Mensagem de erro"`
+}
+
+// CriarInteresse
+// @Summary Expressar interesse em um projeto
+// @Description Permite que um usuário expresse interesse em participar de um projeto, fornecendo nome, email e telefone.
+// @Tags Interesses
+// @Accept json
+// @Produce json
+// @Param id path int true "ID do Projeto"
+// @Param interesse body InteresseInput true "Dados do interesse"
+// @Success 201 {object} Interesse "Interesse criado com sucesso"
+// @Failure 400 {object} HTTPError "Requisição inválida"
+// @Failure 404 {object} HTTPError "Projeto não encontrado"
+// @Failure 500 {object} HTTPError "Erro interno do servidor"
+// @Router /projetos/{id}/interesses [post]
 func CriarInteresse(c *gin.Context) {
 	db, exists := c.Get("db")
 	if !exists {
@@ -86,6 +118,16 @@ func CriarInteresse(c *gin.Context) {
 	c.JSON(http.StatusCreated, interesse)
 }
 
+// ListarInteressesInstituicao
+// @Summary Listar interesses por instituição
+// @Description Retorna uma lista de todos os interesses registrados para projetos de uma instituição específica.
+// @Tags Interesses
+// @Produce json
+// @Param instituicao path string true "Nome da Instituição (ex: CBB)"
+// @Success 200 {array} Interesse "Lista de interesses"
+// @Failure 404 {object} HTTPError "Nenhum interesse encontrado para esta instituição"
+// @Failure 500 {object} HTTPError "Erro interno do servidor"
+// @Router /admin/{instituicao}/interesses [get]
 func ListarInteressesInstituicao(c *gin.Context) {
 	db, exists := c.Get("db")
 	if !exists {
@@ -126,6 +168,17 @@ func ListarInteressesInstituicao(c *gin.Context) {
 	c.JSON(http.StatusOK, interesses)
 }
 
+// DeletarInteresse
+// @Summary Deletar um interesse
+// @Description Permite que um administrador delete um interesse específico, desde que pertença à sua instituição.
+// @Tags Interesses
+// @Param instituicao path string true "Nome da Instituição (ex: CBB)"
+// @Param id path int true "ID do Interesse"
+// @Success 204 "Interesse deletado com sucesso"
+// @Failure 403 {object} HTTPError "Você não tem permissão para deletar este interesse"
+// @Failure 404 {object} HTTPError "Interesse não encontrado"
+// @Failure 500 {object} HTTPError "Erro interno do servidor"
+// @Router /admin/{instituicao}/interesses/{id} [delete]
 func DeletarInteresse(c *gin.Context) {
 	db, exists := c.Get("db")
 	if !exists {
@@ -182,6 +235,14 @@ func DeletarInteresse(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+// GetProjetos
+// @Summary Lista todos os projetos
+// @Description Retorna uma lista completa de todos os projetos cadastrados.
+// @Tags Projetos
+// @Produce json
+// @Success 200 {array} Projeto "Lista de projetos"
+// @Failure 500 {object} HTTPError "Erro interno do servidor"
+// @Router /projetos [get]
 func GetProjetos(c *gin.Context) {
 	// Obtém a conexão com o banco de dados do contexto
 	db, exists := c.Get("db")
@@ -212,6 +273,16 @@ func GetProjetos(c *gin.Context) {
 	c.JSON(http.StatusOK, projetos)
 }
 
+// GetProjetoByID
+// @Summary Obtém um projeto pelo ID
+// @Description Retorna os detalhes de um projeto específico com base no seu ID.
+// @Tags Projetos
+// @Produce json
+// @Param id path int true "ID do Projeto"
+// @Success 200 {object} Projeto "Detalhes do projeto"
+// @Failure 404 {object} HTTPError "Projeto não encontrado"
+// @Failure 500 {object} HTTPError "Erro interno do servidor"
+// @Router /projeto/{id} [get]
 func GetProjetoByID(c *gin.Context) {
 	// Obtém a conexão com o banco de dados do contexto
 	db, exists := c.Get("db")
@@ -237,6 +308,14 @@ func GetProjetoByID(c *gin.Context) {
 	c.JSON(http.StatusOK, p)
 }
 
+// GetInstituicoes
+// @Summary Lista todas as instituições
+// @Description Retorna uma lista de todas as instituições cadastradas.
+// @Tags Instituições
+// @Produce json
+// @Success 200 {array} Instituicao "Lista de instituições"
+// @Failure 500 {object} HTTPError "Erro interno do servidor"
+// @Router /instituicoes [get]
 func GetInstituicoes(c *gin.Context) {
 	// Obtém a conexão com o banco de dados do contexto
 	db, exists := c.Get("db")
@@ -267,6 +346,15 @@ func GetInstituicoes(c *gin.Context) {
 	c.JSON(http.StatusOK, instituicoes)
 }
 
+// GetProjetosByInstituicao
+// @Summary Lista projetos por instituição
+// @Description Retorna uma lista de projetos filtrados por uma instituição específica.
+// @Tags Projetos
+// @Produce json
+// @Param instituicao path string true "Nome da Instituição (ex: CBB)"
+// @Success 200 {array} Projeto "Lista de projetos da instituição"
+// @Failure 500 {object} HTTPError "Erro interno do servidor"
+// @Router /projetos/{instituicao} [get]
 func GetProjetosByInstituicao(c *gin.Context) {
 	// Obtém a conexão com o banco de dados do contexto
 	db, exists := c.Get("db")
@@ -299,6 +387,16 @@ func GetProjetosByInstituicao(c *gin.Context) {
 	c.JSON(http.StatusOK, projetos)
 }
 
+// GetProjetosByInstituicaoAndTipo
+// @Summary Lista projetos por instituição e tipo
+// @Description Retorna uma lista de projetos filtrados por instituição e tipo (INDIVIDUAL, INSTITUCIONAL, PROGRAMA).
+// @Tags Projetos
+// @Produce json
+// @Param instituicao path string true "Nome da Instituição (ex: CBB)"
+// @Param tipo path string true "Tipo do Projeto (ex: INDIVIDUAL)"
+// @Success 200 {array} Projeto "Lista de projetos por instituição e tipo"
+// @Failure 500 {object} HTTPError "Erro interno do servidor"
+// @Router /projetos/{instituicao}/{tipo} [get]
 func GetProjetosByInstituicaoAndTipo(c *gin.Context) {
 	// Obtém a conexão com o banco de dados do contexto
 	db, exists := c.Get("db")
@@ -332,6 +430,18 @@ func GetProjetosByInstituicaoAndTipo(c *gin.Context) {
 	c.JSON(http.StatusOK, projetos)
 }
 
+// AdminCreateProjeto
+// @Summary Cria um novo projeto (Admin)
+// @Description Permite que um administrador crie um novo projeto para sua instituição.
+// @Tags Admin - Projetos
+// @Accept json
+// @Produce json
+// @Param instituicao path string true "Nome da Instituição (ex: CBB)"
+// @Param projeto body ProjetoInput true "Dados do Projeto"
+// @Success 201 {object} Projeto "Projeto criado com sucesso"
+// @Failure 400 {object} HTTPError "Requisição inválida"
+// @Failure 500 {object} HTTPError "Erro interno do servidor"
+// @Router /admin/{instituicao}/projetos [post]
 func AdminCreateProjeto(c *gin.Context) {
 	// Obtém a conexão com o banco de dados do contexto
 	db, exists := c.Get("db")
@@ -374,6 +484,21 @@ func AdminCreateProjeto(c *gin.Context) {
 	c.JSON(http.StatusCreated, p)
 }
 
+// AdminUpdateProjeto
+// @Summary Atualiza um projeto existente (Admin)
+// @Description Permite que um administrador atualize os detalhes de um projeto existente em sua instituição.
+// @Tags Admin - Projetos
+// @Accept json
+// @Produce json
+// @Param instituicao path string true "Nome da Instituição (ex: CBB)"
+// @Param id path int true "ID do Projeto"
+// @Param projeto body ProjetoInput true "Dados do Projeto"
+// @Success 200 {object} Projeto "Projeto atualizado com sucesso"
+// @Failure 400 {object} HTTPError "Requisição inválida"
+// @Failure 403 {object} HTTPError "Você não pode atualizar projeto de outra instituição"
+// @Failure 404 {object} HTTPError "Projeto não encontrado"
+// @Failure 500 {object} HTTPError "Erro interno do servidor"
+// @Router /admin/{instituicao}/projetos/{id} [put]
 func AdminUpdateProjeto(c *gin.Context) {
 	// Obtém a conexão com o banco de dados do contexto
 	db, exists := c.Get("db")
@@ -433,6 +558,17 @@ func AdminUpdateProjeto(c *gin.Context) {
 	c.JSON(http.StatusOK, p)
 }
 
+// AdminDeleteProjeto
+// @Summary Deleta um projeto (Admin)
+// @Description Permite que um administrador delete um projeto de sua instituição.
+// @Tags Admin - Projetos
+// @Param instituicao path string true "Nome da Instituição (ex: CBB)"
+// @Param id path int true "ID do Projeto"
+// @Success 200 {object} HTTPError "Projeto deletado com sucesso"
+// @Failure 403 {object} HTTPError "Você não pode deletar projeto de outra instituição"
+// @Failure 404 {object} HTTPError "Projeto não encontrado"
+// @Failure 500 {object} HTTPError "Erro interno do servidor"
+// @Router /admin/{instituicao}/projetos/{id} [delete]
 func AdminDeleteProjeto(c *gin.Context) {
 	// Obtém a conexão com o banco de dados do contexto
 	db, exists := c.Get("db")
@@ -517,7 +653,7 @@ func main() {
 	router.GET("/projetos/:instituicao/:tipo", GetProjetosByInstituicaoAndTipo)
 
 	// Rota para expressar interesse em um projeto
-	router.POST("/api/projetos/:id/interesses", CriarInteresse)
+	router.POST("/projetos/:id/interesses", CriarInteresse)
 
 	// Rotas administrativas (requerem autenticação/autorização, implícita pelo grupo /admin)
 	admin := router.Group("/admin")

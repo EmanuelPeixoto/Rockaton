@@ -1,12 +1,628 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "This is the API for the Rockaton project.",
-        "title": "Rockaton API",
-        "contact": {},
-        "version": "1.0"
+        "contact": {}
     },
-    "host": "localhost:8080",
-    "basePath": "/",
-    "paths": {}
+    "paths": {
+        "/admin/{instituicao}/interesses": {
+            "get": {
+                "description": "Retorna uma lista de todos os interesses registrados para projetos de uma instituição específica.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interesses"
+                ],
+                "summary": "Listar interesses por instituição",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nome da Instituição (ex: CBB)",
+                        "name": "instituicao",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de interesses",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Interesse"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Nenhum interesse encontrado para esta instituição",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/{instituicao}/interesses/{id}": {
+            "delete": {
+                "description": "Permite que um administrador delete um interesse específico, desde que pertença à sua instituição.",
+                "tags": [
+                    "Interesses"
+                ],
+                "summary": "Deletar um interesse",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nome da Instituição (ex: CBB)",
+                        "name": "instituicao",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID do Interesse",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Interesse deletado com sucesso"
+                    },
+                    "403": {
+                        "description": "Você não tem permissão para deletar este interesse",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Interesse não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/{instituicao}/projetos": {
+            "post": {
+                "description": "Permite que um administrador crie um novo projeto para sua instituição.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Projetos"
+                ],
+                "summary": "Cria um novo projeto (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nome da Instituição (ex: CBB)",
+                        "name": "instituicao",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados do Projeto",
+                        "name": "projeto",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.ProjetoInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Projeto criado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/main.Projeto"
+                        }
+                    },
+                    "400": {
+                        "description": "Requisição inválida",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/{instituicao}/projetos/{id}": {
+            "put": {
+                "description": "Permite que um administrador atualize os detalhes de um projeto existente em sua instituição.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Admin - Projetos"
+                ],
+                "summary": "Atualiza um projeto existente (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nome da Instituição (ex: CBB)",
+                        "name": "instituicao",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID do Projeto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados do Projeto",
+                        "name": "projeto",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.ProjetoInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Projeto atualizado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/main.Projeto"
+                        }
+                    },
+                    "400": {
+                        "description": "Requisição inválida",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "403": {
+                        "description": "Você não pode atualizar projeto de outra instituição",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Projeto não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Permite que um administrador delete um projeto de sua instituição.",
+                "tags": [
+                    "Admin - Projetos"
+                ],
+                "summary": "Deleta um projeto (Admin)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nome da Instituição (ex: CBB)",
+                        "name": "instituicao",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID do Projeto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Projeto deletado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "403": {
+                        "description": "Você não pode deletar projeto de outra instituição",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Projeto não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/instituicoes": {
+            "get": {
+                "description": "Retorna uma lista de todas as instituições cadastradas.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Instituições"
+                ],
+                "summary": "Lista todas as instituições",
+                "responses": {
+                    "200": {
+                        "description": "Lista de instituições",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Instituicao"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/projeto/{id}": {
+            "get": {
+                "description": "Retorna os detalhes de um projeto específico com base no seu ID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projetos"
+                ],
+                "summary": "Obtém um projeto pelo ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID do Projeto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalhes do projeto",
+                        "schema": {
+                            "$ref": "#/definitions/main.Projeto"
+                        }
+                    },
+                    "404": {
+                        "description": "Projeto não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/projetos": {
+            "get": {
+                "description": "Retorna uma lista completa de todos os projetos cadastrados.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projetos"
+                ],
+                "summary": "Lista todos os projetos",
+                "responses": {
+                    "200": {
+                        "description": "Lista de projetos",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Projeto"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/projetos/{id}/interesses": {
+            "post": {
+                "description": "Permite que um usuário expresse interesse em participar de um projeto, fornecendo nome, email e telefone.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Interesses"
+                ],
+                "summary": "Expressar interesse em um projeto",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID do Projeto",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados do interesse",
+                        "name": "interesse",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.InteresseInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Interesse criado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/main.Interesse"
+                        }
+                    },
+                    "400": {
+                        "description": "Requisição inválida",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Projeto não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/projetos/{instituicao}": {
+            "get": {
+                "description": "Retorna uma lista de projetos filtrados por uma instituição específica.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projetos"
+                ],
+                "summary": "Lista projetos por instituição",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nome da Instituição (ex: CBB)",
+                        "name": "instituicao",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de projetos da instituição",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Projeto"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/projetos/{instituicao}/{tipo}": {
+            "get": {
+                "description": "Retorna uma lista de projetos filtrados por instituição e tipo (INDIVIDUAL, INSTITUCIONAL, PROGRAMA).",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Projetos"
+                ],
+                "summary": "Lista projetos por instituição e tipo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Nome da Instituição (ex: CBB)",
+                        "name": "instituicao",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Tipo do Projeto (ex: INDIVIDUAL)",
+                        "name": "tipo",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de projetos por instituição e tipo",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Projeto"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/main.HTTPError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.HTTPError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Mensagem de erro"
+                }
+            }
+        },
+        "main.Instituicao": {
+            "type": "object",
+            "properties": {
+                "link": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.Interesse": {
+            "type": "object",
+            "required": [
+                "email",
+                "nome"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "projeto_id": {
+                    "type": "integer"
+                },
+                "telefone": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.InteresseInput": {
+            "type": "object",
+            "required": [
+                "email",
+                "nome"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "telefone": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.Projeto": {
+            "type": "object",
+            "properties": {
+                "coordenador": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "instituicao": {
+                    "type": "string"
+                },
+                "programa": {
+                    "type": "string"
+                },
+                "projeto": {
+                    "type": "string"
+                },
+                "tipo": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.ProjetoInput": {
+            "type": "object",
+            "required": [
+                "coordenador",
+                "instituicao",
+                "projeto",
+                "tipo"
+            ],
+            "properties": {
+                "coordenador": {
+                    "type": "string"
+                },
+                "instituicao": {
+                    "type": "string"
+                },
+                "programa": {
+                    "type": "string"
+                },
+                "projeto": {
+                    "type": "string"
+                },
+                "tipo": {
+                    "type": "string"
+                }
+            }
+        }
+    }
 }

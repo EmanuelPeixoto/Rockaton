@@ -15,6 +15,7 @@
           pkgs.git
           pkgs.go
           pkgs.lazygit
+          pkgs.go-swag
           pkgs.swagger-cli
           pkgs.sqlite
         ];
