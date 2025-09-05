@@ -18,6 +18,8 @@
           pkgs.go-swag
           pkgs.swagger-cli
           pkgs.sqlite
+
+          pkgs.nodejs_24
         ];
 
         shellHook = ''
