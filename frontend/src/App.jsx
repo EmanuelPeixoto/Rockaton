@@ -3,12 +3,23 @@ import apiClient from './Api.js'
 import './App.css'
 import Box from '@mui/material/Box'
 
-const Project = ({ projects, coordinator, center }) => (
+const PostTest = ( {id} ) => {
+  var route = '/projetos/' + id + '/interesses'
+  apiClient.post(route, {
+      email: 'bruno.m.sales03@gmail.com',
+      nome: 'breno',
+      telefone: '1239587',
+  })
+  .then(response => {console.log('Response:', response.data)})
+  .catch(error => {console.log('error:', error)})
+}
+
+const Project = ({ project_id, project, coordinator, center }) => (
   <Box component="section" sx={{width: 1200, height: 350, borderRadius: 1, bgcolor: 'primary.main', '&:hover':{ bgcolor: 'primary.dark'},}}>
-    <h2>{projects}</h2>
+    <h2>{project}</h2>
       <h4>{coordinator}</h4>
       <h1>{center}</h1>
-    <button>click me</button>
+    <button onClick={() => PostTest({id: project_id})}>click me</button>
   </Box>
 )
 
@@ -34,7 +45,8 @@ const ProjectList = ({ center }) => {
       {projects.map((proj) => (
         <Project
           key={proj.id}
-          projects={proj.projeto}
+          project_id={proj.id}
+          project={proj.projeto}
           coordinator={proj.coordenador}
           center={proj.instituicao}
         />
