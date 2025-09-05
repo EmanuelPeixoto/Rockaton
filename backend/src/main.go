@@ -27,6 +27,161 @@ type Instituicao struct {
 	Link string `json:"link"`
 }
 
+type Interesse struct {
+	ID        int    `json:"id"`
+	Nome      string `json:"nome" binding:"required"`
+	Email     string `json:"email" binding:"required,email"`
+	Telefone  string `json:"telefone"`
+	ProjetoID int    `json:"projeto_id"`
+}
+
+func CriarInteresse(c *gin.Context) {
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database connection not found"})
+		return
+	}
+	sqlDB := db.(*sql.DB)
+
+	projetoID := c.Param("id")
+	var interesse Interesse
+	if err := c.ShouldBindJSON(&interesse); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var existingProjetoID int
+	err := sqlDB.QueryRow("SELECT id FROM projetos WHERE id = ?", projetoID).Scan(&existingProjetoID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Projeto not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error checking project existence"})
+		return
+	}
+
+	interesse.ProjetoID = existingProjetoID
+
+	stmt, err := sqlDB.Prepare("INSERT INTO interesses (nome, email, telefone, projeto_id) VALUES (?, ?, ?, ?)")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao preparar comando SQL para interesse"})
+		return
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Exec(interesse.Nome, interesse.Email, interesse.Telefone, interesse.ProjetoID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao inserir interesse"})
+		return
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao recuperar ID do interesse"})
+		return
+	}
+	interesse.ID = int(id)
+
+	c.JSON(http.StatusCreated, interesse)
+}
+
+func ListarInteressesInstituicao(c *gin.Context) {
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database connection not found"})
+		return
+	}
+	sqlDB := db.(*sql.DB)
+
+	instituicaoParam := strings.ToUpper(c.Param("instituicao"))
+
+	rows, err := sqlDB.Query(`
+		SELECT i.id, i.nome, i.email, i.telefone, i.projeto_id
+		FROM interesses i
+		JOIN projetos p ON i.projeto_id = p.id
+		WHERE p.instituicao = ?`, instituicaoParam)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar interesses da instituição"})
+		return
+	}
+	defer rows.Close()
+
+	interesses := []Interesse{}
+	for rows.Next() {
+		var interesse Interesse
+		err := rows.Scan(&interesse.ID, &interesse.Nome, &interesse.Email, &interesse.Telefone, &interesse.ProjetoID)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao escanear interesse"})
+			return
+		}
+		interesses = append(interesses, interesse)
+	}
+
+	if len(interesses) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"message": "Nenhum interesse encontrado para esta instituição"})
+		return
+	}
+
+	c.JSON(http.StatusOK, interesses)
+}
+
+func DeletarInteresse(c *gin.Context) {
+	db, exists := c.Get("db")
+	if !exists {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database connection not found"})
+		return
+	}
+	sqlDB := db.(*sql.DB)
+
+	interesseID := c.Param("id")
+	adminInstituicao := strings.ToUpper(c.Param("instituicao")) // Get institution from admin context
+
+	var projetoID int
+	err := sqlDB.QueryRow("SELECT projeto_id FROM interesses WHERE id = ?", interesseID).Scan(&projetoID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Interesse não encontrado"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar interesse"})
+		return
+	}
+
+	var projetoInstituicao string
+	err = sqlDB.QueryRow("SELECT instituicao FROM projetos WHERE id = ?", projetoID).Scan(&projetoInstituicao)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao consultar instituição do projeto"})
+		return
+	}
+
+	if strings.ToUpper(projetoInstituicao) != adminInstituicao {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Você não tem permissão para deletar este interesse"})
+		return
+	}
+
+	stmt, err := sqlDB.Prepare("DELETE FROM interesses WHERE id = ?")
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao preparar comando SQL para deletar interesse"})
+		return
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Exec(interesseID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao deletar interesse"})
+		return
+	}
+
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Interesse não deletado"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
 func main() {
 	db, err := sql.Open("sqlite3", "./rockaton.db")
 	if err != nil {
@@ -35,6 +190,11 @@ func main() {
 	defer db.Close()
 
 	router := gin.Default()
+
+	router.Use(func(c *gin.Context) {
+		c.Set("db", db)
+		c.Next()
+	})
 
 	docs.SwaggerInfo.Title = "Rockaton API"
 	docs.SwaggerInfo.Description = "This is the API for the Rockaton project."
@@ -146,6 +306,8 @@ func main() {
 		c.JSON(http.StatusOK, projetos)
 	})
 
+	router.POST("/api/projetos/:id/interesses", CriarInteresse)
+
 	admin := router.Group("/admin")
 	{
 		admin.POST("/:instituicao/projetos", func(c *gin.Context) {
@@ -156,7 +318,6 @@ func main() {
 				return
 			}
 
-			// força instituição da rota
 			p.Instituicao = inst
 
 			stmt, err := db.Prepare("INSERT INTO projetos (coordenador, projeto, programa, instituicao, tipo) VALUES (?, ?, ?, ?, ?)")
@@ -191,7 +352,6 @@ func main() {
 				return
 			}
 
-			// Verifica se o projeto existe
 			var existingInstituicao string
 			err := db.QueryRow("SELECT instituicao FROM projetos WHERE id = ?", id).Scan(&existingInstituicao)
 			if err != nil {
@@ -203,7 +363,6 @@ func main() {
 				return
 			}
 
-			// Verifica se a instituição bate
 			if existingInstituicao != inst {
 				c.JSON(http.StatusForbidden, gin.H{"error": "Você não pode atualizar projeto de outra instituição"})
 				return
@@ -237,7 +396,6 @@ func main() {
 			inst := strings.ToUpper(c.Param("instituicao"))
 			id := c.Param("id")
 
-			// Verifica se o projeto existe
 			var existingInstituicao string
 			err := db.QueryRow("SELECT instituicao FROM projetos WHERE id = ?", id).Scan(&existingInstituicao)
 			if err != nil {
@@ -249,7 +407,6 @@ func main() {
 				return
 			}
 
-			// Verifica se a instituição bate
 			if existingInstituicao != inst {
 				c.JSON(http.StatusForbidden, gin.H{"error": "Você não pode deletar projeto de outra instituição"})
 				return
@@ -276,6 +433,8 @@ func main() {
 
 			c.JSON(http.StatusOK, gin.H{"message": "Projeto deletado com sucesso"})
 		})
+		admin.GET("/:instituicao/interesses", ListarInteressesInstituicao)
+		admin.DELETE("/:instituicao/interesses/:id", DeletarInteresse)
 	}
 
 	router.Run(":8080")

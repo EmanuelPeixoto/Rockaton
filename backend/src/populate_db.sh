@@ -18,6 +18,15 @@ CREATE TABLE IF NOT EXISTS instituicoes (
     nome TEXT,
     link TEXT
 );
+
+CREATE TABLE IF NOT EXISTS interesses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nome TEXT NOT NULL,
+    email TEXT NOT NULL,
+    telefone TEXT,
+    projeto_id INTEGER NOT NULL,
+    FOREIGN KEY (projeto_id) REFERENCES projetos(id)
+);
 EOF
 
 # Inserção dos dados das instituições
@@ -280,3 +289,11 @@ sqlite3 $DB "SELECT instituicao, COUNT(*) FROM projetos GROUP BY instituicao;"
 echo ""
 echo "Registros por tipo:"
 sqlite3 $DB "SELECT tipo, COUNT(*) FROM projetos GROUP BY tipo;"
+
+# Inserção de dados de interesse para testes
+sqlite3 $DB <<EOF
+INSERT INTO interesses (nome, email, telefone, projeto_id) VALUES
+('João Silva', 'joao.silva@example.com', '11987654321', 1),
+('Maria Souza', 'maria.souza@example.com', '21998765432', 2),
+('Pedro Santos', 'pedro.santos@example.com', '31976543210', 1);
+EOF
