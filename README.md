@@ -33,6 +33,7 @@ Para executar o projeto, siga os passos abaixo:
    ```
 
 O servidor backend estará disponível em `http://localhost:8080`.
+
 O servidor frontend estará disponível no endereço fornecido pelo processo.
 
 ### Endpoints
